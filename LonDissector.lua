@@ -261,11 +261,35 @@ function mes_proto.dissector(buffer, pinfo, tree)
             
             if(SPDU.SPDUtype == 0) then
                 spdu:add(buffer(pos,1),"SPDUtype:     REQUEST");
-                local apdu = buffer(pos,1);
+                local apdu = buffer(pos,2);
                 info = info .. " | " .. "REQUEST";
                 
-                if(apdu:bitfield(0, 3) == 3) then
-                    spdu:add(buffer(pos,1),"APDU Type:   NM request/command");
+                if(apdu:bitfield(0, 2) == 0) then
+                    local remain = buffer:len() - pos - 1 - 2;
+                    local remainBuffer = buffer(pos+1,remain);
+                    local id = apdu:bitfield(2, 6);
+                    local nmType = "APDU Type:    generic application message #"..id;
+                    spdu:add(buffer(pos,1),nmType);
+                    spdu:add(remainBuffer, "APDU Data:    " .. remainBuffer:bytes():tohex());
+                    info = info .. " | " .. nmType;
+                elseif(apdu:bitfield(0, 2) == 2) then
+                    local remain = buffer:len() - pos - 2 - 2;
+                    local remainBuffer = buffer(pos+1,remain);
+                    local id = apdu:bitfield(2, 14);
+                    local nmType = "APDU Type:    network variable message IN #"..id;
+                    spdu:add(buffer(pos,1),nmType);
+                    spdu:add(remainBuffer, "APDU Data:    " .. remainBuffer:bytes():tohex());
+                    info = info .. " | " .. nmType;
+                elseif(apdu:bitfield(0, 2) == 3) then
+                    local remain = buffer:len() - pos - 2 - 2;
+                    local remainBuffer = buffer(pos+1,remain);
+                    local id = apdu:bitfield(2, 14);
+                    local nmType = "APDU Type:    network variable message OUT #"..id;
+                    spdu:add(buffer(pos,1),nmType);
+                    spdu:add(remainBuffer, "APDU Data:    " .. remainBuffer:bytes():tohex());
+                    info = info .. " | " .. nmType;
+                elseif(apdu:bitfield(0, 3) == 3) then
+                    spdu:add(buffer(pos,1),"APDU Type:  NM request/command");
                     pos = pos + 1;
                     
                     local command = apdu:bitfield(3, 5);
@@ -355,24 +379,50 @@ function mes_proto.dissector(buffer, pinfo, tree)
                         local nmType = "NM Type:     unknown (".. command ..")";
                         info = info .. " | " .. nmType;
                     end
-                        
-                    
                 elseif(apdu:bitfield(0, 4) == 5) then
-                    local nmType = "APDU Type:     ND message";
+                    local nmType = "APDU Type:    ND message";
+                    spdu:add(buffer(pos,1),nmType);
+                    info = info .. " | " .. nmType;
+                elseif(apdu:bitfield(0, 4) == 4) then
+                    local nmType = "APDU Type:    foreign frame";
                     spdu:add(buffer(pos,1),nmType);
                     info = info .. " | " .. nmType;
                 else
-                    local nmType = "APDU Type:     unknown";
+                    local nmType = "APDU Type:    unknown";
                     spdu:add(buffer(pos,1),nmType);
                     info = info .. " | " .. nmType;
                 end
                 
             elseif(SPDU.SPDUtype == 2) then
                 spdu:add(buffer(pos,1),"SPDUtype:     RESPONSE");
-                local apdu = buffer(pos,1);
+                local apdu = buffer(pos,2);
                 info = info .. " | " .. "RESPONSE";
                 
-                if(apdu:bitfield(0, 3) == 1) then
+                if(apdu:bitfield(0, 2) == 0) then
+                    local remain = buffer:len() - pos - 1 - 2;
+                    local remainBuffer = buffer(pos+1,remain);
+                    local id = apdu:bitfield(2, 6);
+                    local nmType = "APDU Type:    generic application message #"..id;
+                    spdu:add(buffer(pos,1),nmType);
+                    spdu:add(remainBuffer, "APDU Data:    " .. remainBuffer:bytes():tohex());
+                    info = info .. " | " .. nmType;
+                elseif(apdu:bitfield(0, 2) == 2) then
+                    local remain = buffer:len() - pos - 2 - 2;
+                    local remainBuffer = buffer(pos+1,remain);
+                    local id = apdu:bitfield(2, 14);
+                    local nmType = "APDU Type:    network variable message IN #"..id;
+                    spdu:add(buffer(pos,1),nmType);
+                    spdu:add(remainBuffer, "APDU Data:    " .. remainBuffer:bytes():tohex());
+                    info = info .. " | " .. nmType;
+                elseif(apdu:bitfield(0, 2) == 3) then
+                    local remain = buffer:len() - pos - 2 - 2;
+                    local remainBuffer = buffer(pos+1,remain);
+                    local id = apdu:bitfield(2, 14);
+                    local nmType = "APDU Type:    network variable message OUT #"..id;
+                    spdu:add(buffer(pos,1),nmType);
+                    spdu:add(remainBuffer, "APDU Data:    " .. remainBuffer:bytes():tohex());
+                    info = info .. " | " .. nmType;
+                elseif(apdu:bitfield(0, 3) == 1) then
                     spdu:add(buffer(pos,1),"APDU Type:   NM/ND response");
                     pos = pos + 1;
                     local command = apdu:bitfield(3, 5);
@@ -491,6 +541,14 @@ function mes_proto.dissector(buffer, pinfo, tree)
                         info = info .. " | " .. nmType;
                     end
                         
+                elseif(apdu:bitfield(0, 4) == 5) then
+                    local nmType = "APDU Type:    ND message";
+                    spdu:add(buffer(pos,1),nmType);
+                    info = info .. " | " .. nmType;
+                elseif(apdu:bitfield(0, 4) == 4) then
+                    local nmType = "APDU Type:    foreign frame";
+                    spdu:add(buffer(pos,1),nmType);
+                    info = info .. " | " .. nmType;
                 elseif(apdu:bitfield(0, 3) == 0) then
                     local nmType = "APDU Type:     NM/ND response failed";
                     spdu:add(buffer(pos,1),nmType);
